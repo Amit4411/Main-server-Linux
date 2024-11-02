@@ -1,0 +1,38 @@
+name: CI
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download Ngrok
+      run: wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip -O ngrok.zip
+
+    - name: Extract Ngrok
+      run: unzip ngrok.zip
+
+    - name: Authenticate Ngrok
+      run: ./ngrok authtoken $NGROK_AUTH_TOKEN
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+
+    - name: Install XRDP
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xrdp
+        sudo systemctl enable xrdp
+        sudo systemctl start xrdp
+
+    - name: Create User and Set Password
+      run: |
+        sudo useradd -m linux
+        echo 'linux:openlinux' | sudo chpasswd
+
+    - name: Open RDP Port
+      run: sudo ufw allow 3389
+
+    - name: Create Tunnel
+      run: ./ngrok tcp 3389
